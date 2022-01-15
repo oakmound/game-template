@@ -18,7 +18,7 @@ env:
   # If not in go mod see README
   # GOPATH: /home/runner/work/<repo_name>/<repo_name>/go
 jobs:
-  short circuit stuff cause we can
+  # short circuit stuff cause we can
   check-setup:
     runs-on: ubuntu-latest
     steps:
