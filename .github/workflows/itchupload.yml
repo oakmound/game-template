@@ -1,0 +1,122 @@
+# Build and push to itch eventually
+name: itchy-build-pusher
+
+on:
+  workflow_dispatch:
+    inputs:
+      buildversion:
+        description: 'Build Version'
+        default: '0.0.0'
+        required: true
+  push:  
+    branches:
+      - main
+      - master
+env: 
+  BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+  
+  # If not in go mod see README
+  # GOPATH: /home/runner/work/<repo_name>/<repo_name>/go
+jobs:
+  # short circuit stuff cause we can
+  # check-setup:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Quick exit check
+  #       run:  >-
+  #         if [[ -z "$secrets.BUTLER_API_KEY" ]]; then
+  #           echo "Missing required secret in this org / project.\n Please place your butler creds in the BUTLER_API_KEY secret per https://itch.io/docs/butler/login.html"
+  #           exit 1
+  #         fi
+
+  butler-dl:
+    # needs: check-setup
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        path: 'go/src/github.com/${{ github.repository }}'
+    
+    # Run this prior to build checking due to need for $GOPATH to be set
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '^1.16' # The Go version to download (if necessary) and use.
+    
+    - name: Determine Build Info
+      id: info
+      run:  >-
+        stableRelease="";
+
+        fullRepoPath="${{github.repository}}";
+        repoName="${fullRepoPath##*/}";
+        echo "::set-output name=REPO_NAME::$(echo $repoName)";
+
+        build="${{ github.event.inputs.buildversion }}"; 
+        if [[ -z "$build" ]]; then
+          echo "::group::retrieval from file";
+          cd go/src/github.com/$fullRepoPath;
+          build=$(cat ./version.json | jq '.version' );
+          echo "found build of $build";
+          if [[  -z "$build" ]]; then
+            echo "Bad format of version.json exiting" && exit 1; 
+          fi;
+          oldSHA=$(git log -n 1 --pretty=format:%H -- version.json);
+          if [[ "$oldSHA" == "${{ github.sha }}" ]]; then 
+            stableRelease="true";
+          fi;
+          echo "::endgroup::";
+        else
+          stableRelease="true"
+          echo "Running from workflow call setting as stable and not checking files.";
+        fi;
+        echo "Setting Build Version as $build";
+        echo "::set-output name=VERSION::$(echo $build)";
+        echo "Is Stable: $stableRelease";
+        echo "::set-output name=STABLE_RELEASE::$(echo $stableRelease)";
+
+
+    - uses: actions/checkout@v2
+      with:
+        repository: 'oakmound/oak'
+        ref: 'v3.1.0'
+        path: 'go/src/github.com/oakmound/oak'
+
+    # paranoia with cds
+    - name: Build Game      
+      run: |
+        cd go/src/github.com/${{ github.repository }}/build
+        go run build.go -js -v 
+    - name: Convience dirs
+      run: |
+        cd go/src/github.com/${{ github.repository }}/build
+        cp ./${{ steps.info.outputs.REPO_NAME }}_windows386.exe ./win32 
+        cp ./${{ steps.info.outputs.REPO_NAME }}_windowsamd64.exe ./win64
+        cp ./${{ steps.info.outputs.REPO_NAME }}_jswasm.wasm ./wasm
+        zip -r wasm.zip wasm 
+    
+    - name: Download Butler
+      run: curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+    - uses: montudor/action-zip@v1
+      with:
+        args: unzip -qq butler.zip
+    
+    - name: creds
+      run:  >-
+        echo "::add-mask::${{  secrets.BUTLER_API_KEY  }}";
+        echo "${{  secrets.BUTLER_API_KEY  }}" >> butler_creds
+    
+    - name: attempt upload 32
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win32 $itchOrgProject:win32-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
+    - name: attempt upload 64
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win64 $itchOrgProject:win64-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
+    - name: attempt upload js
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/wasm.zip $itchOrgProject:js-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
+
+    - name: stable version upload 32
+      if: ${{ steps.info.outputs.STABLE_RELEASE == 'true' }}
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win32 $itchOrgProject:win32-stable --userversion ${{ steps.info.outputs.VERSION }}
+    - name: stable version upload 64
+      if: ${{ steps.info.outputs.STABLE_RELEASE == 'true'  }}
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win64 $itchOrgProject:win64-stable --userversion ${{ steps.info.outputs.VERSION }}
