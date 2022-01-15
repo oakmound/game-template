@@ -14,9 +14,9 @@ Derived as much of this project was from the oakmound project that can be found 
 - Update the itchupload.yaml and replace $itchProjectName with <username>/<gamename> for example https://oakmound.itch.io/dashking replaced this with oakmound/dashking
 - If not a private github repo consider locking it down in one of the following ways to protect your secret. While it is masked by default a contributor could push a different version of the action if they wanted
     - Lock down who can push directly to your main branch (security against exfiltration)
-    - Hide your actions tab (https://github.com/oakmound/winter21/settings/actions)
-    - Require Approval for outside contributors in Actions (https://github.com/oakmound/oak/settings/actions)
+    - Hide your actions tab (https://github.com/<username>/<repository_name>/settings/actions)
+    - Require Approval for outside contributors in Actions (https://github.com/<username>/<repository_name>/settings/actions)
 - If you have not previously uploaded your itch credentials to your repo or org as the secret BUTLER_API_KEY do the following
-    - Go to https://itch.io/user/settings/api-key generate a key and get its value
+    - Go to https://itch.io/user/settings/api-key generate a key and get its value (https://itch.io/docs/butler/login.html)
     - Go to https://github.com/<username>/<repository_name>/settings/secrets/actions
     - Add a new repository secret with the name BUTLER_API_KEY with the value you got from the api key page

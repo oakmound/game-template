@@ -18,19 +18,19 @@ env:
   # If not in go mod see README
   # GOPATH: /home/runner/work/<repo_name>/<repo_name>/go
 jobs:
-  # short circuit stuff cause we can
-  # check-setup:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Quick exit check
-  #       run:  >-
-  #         if [[ -z "$secrets.BUTLER_API_KEY" ]]; then
-  #           echo "Missing required secret in this org / project.\n Please place your butler creds in the BUTLER_API_KEY secret per https://itch.io/docs/butler/login.html"
-  #           exit 1
-  #         fi
+  short circuit stuff cause we can
+  check-setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Quick exit check
+        run:  >-
+          if [[ -z "$secrets.BUTLER_API_KEY" ]]; then
+            echo "Missing required secret in this org / project.\n Please place your butler creds in the BUTLER_API_KEY secret per https://itch.io/docs/butler/login.html"
+            exit 1
+          fi
 
   butler-dl:
-    # needs: check-setup
+    needs: check-setup
     runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -76,13 +76,6 @@ jobs:
         echo "Is Stable: $stableRelease";
         echo "::set-output name=STABLE_RELEASE::$(echo $stableRelease)";
 
-
-    - uses: actions/checkout@v2
-      with:
-        repository: 'oakmound/oak'
-        ref: 'v3.1.0'
-        path: 'go/src/github.com/oakmound/oak'
-
     # paranoia with cds
     - name: Build Game      
       run: |
@@ -108,15 +101,15 @@ jobs:
         echo "${{  secrets.BUTLER_API_KEY  }}" >> butler_creds
     
     - name: attempt upload 32
-      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win32 $itchOrgProject:win32-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win32 $itchProjectName:win32-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
     - name: attempt upload 64
-      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win64 $itchOrgProject:win64-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win64 $itchProjectName:win64-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
     - name: attempt upload js
-      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/wasm.zip $itchOrgProject:js-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/wasm.zip $itchProjectName:js-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
 
     - name: stable version upload 32
       if: ${{ steps.info.outputs.STABLE_RELEASE == 'true' }}
-      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win32 $itchOrgProject:win32-stable --userversion ${{ steps.info.outputs.VERSION }}
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win32 $itchProjectName:win32-stable --userversion ${{ steps.info.outputs.VERSION }}
     - name: stable version upload 64
       if: ${{ steps.info.outputs.STABLE_RELEASE == 'true'  }}
-      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win64 $itchOrgProject:win64-stable --userversion ${{ steps.info.outputs.VERSION }}
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win64 $itchProjectName:win64-stable --userversion ${{ steps.info.outputs.VERSION }}

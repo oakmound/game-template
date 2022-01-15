@@ -89,7 +89,7 @@ func (Bootstrap) ReplaceProjectName(newName string) {
 			newBody := strings.ReplaceAll(string(body), "oakmound/game-template", newName)
 
 			// also just the reponame
-			newBody := strings.ReplaceAll(string(body), "${{ steps.info.outputs.REPO_NAME }}", newName)
+			newBody = strings.ReplaceAll(string(body), "${{ steps.info.outputs.REPO_NAME }}", newName)
 
 			// lazy way to not touch files that we dont need to
 			// slow but its just a bootstrap and at least paranoia means that we wont affect asset files and the like
