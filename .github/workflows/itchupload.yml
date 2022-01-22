@@ -75,6 +75,16 @@ jobs:
         echo "Is Stable: $stableRelease";
         echo "::set-output name=STABLE_RELEASE::$(echo $stableRelease)";
 
+    - name: cache go modules 
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-
+
     # paranoia with cds
     - name: Build Game      
       run: |
