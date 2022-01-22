@@ -49,9 +49,7 @@ jobs:
         stableRelease="";
 
         fullRepoPath="${{github.repository}}";
-        repoName="${fullRepoPath##*/}";
-        echo "::set-output name=REPO_NAME::$(echo $repoName)";
-
+        
         build="${{ github.event.inputs.buildversion }}"; 
         if [[ -z "$build" ]]; then
           echo "::group::retrieval from file";
@@ -93,9 +91,9 @@ jobs:
     - name: Convience dirs
       run: |
         cd go/src/github.com/${{ github.repository }}/build
-        cp ./${{ steps.info.outputs.PROJECT_NAME }}_windows386.exe ./win32 
-        cp ./${{ steps.info.outputs.PROJECT_NAME }}_windowsamd64.exe ./win64
-        cp ./${{ steps.info.outputs.PROJECT_NAME }}_jswasm.wasm ./wasm
+        cp ./sample-project_windows386.exe ./win32 
+        cp ./sample-project_windowsamd64.exe ./win64
+        cp ./sample-project_jswasm.wasm ./wasm
         zip -r wasm.zip wasm 
     
     - name: Download Butler
