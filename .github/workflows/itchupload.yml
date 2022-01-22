@@ -83,9 +83,9 @@ jobs:
     - name: Convience dirs
       run: |
         cd go/src/github.com/${{ github.repository }}/build
-        cp ./${{ steps.info.outputs.REPO_NAME }}_windows386.exe ./win32 
-        cp ./${{ steps.info.outputs.REPO_NAME }}_windowsamd64.exe ./win64
-        cp ./${{ steps.info.outputs.REPO_NAME }}_jswasm.wasm ./wasm
+        cp ./${{ steps.info.outputs.PROJECT_NAME }}_windows386.exe ./win32 
+        cp ./${{ steps.info.outputs.PROJECT_NAME }}_windowsamd64.exe ./win64
+        cp ./${{ steps.info.outputs.PROJECT_NAME }}_jswasm.wasm ./wasm
         zip -r wasm.zip wasm 
     
     - name: Download Butler

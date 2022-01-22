@@ -51,9 +51,9 @@ func run() error {
 			return
 		default:
 			// Two requests fallthrough: directories and directory/${{ steps.info.outputs.REPO_NAME }}_jswasm.wasm
-			isWasmRequest := strings.HasSuffix(r.URL.Path, "${{ steps.info.outputs.REPO_NAME }}_jswasm.wasm")
+			isWasmRequest := strings.HasSuffix(r.URL.Path, "${{ steps.info.outputs.PROJECT_NAME }}_jswasm.wasm")
 			if !isWasmRequest {
-				r.URL.Path = filepath.Join(r.URL.Path, "${{ steps.info.outputs.REPO_NAME }}_jswasm.wasm")
+				r.URL.Path = filepath.Join(r.URL.Path, "${{ steps.info.outputs.PROJECT_NAME }}_jswasm.wasm")
 			}
 			// If no wasm file exists to render, report so
 			wasm, err := os.Open(filepath.Join(".", r.URL.Path))
@@ -64,9 +64,9 @@ func run() error {
 				subDir := filepath.Dir(filepath.Join(exampleDir, r.URL.Path))
 				rw.Write([]byte(
 					fmt.Sprintf("cd %v\n", subDir)))
-				rw.Write([]byte(`(powershell) $Env:GOOS="js"; $Env:GOARCH="wasm"; go build -o ${{ steps.info.outputs.REPO_NAME }}_jswasm.wasm .`))
+				rw.Write([]byte(`(powershell) $Env:GOOS="js"; $Env:GOARCH="wasm"; go build -o ${{ steps.info.outputs.PROJECT_NAME }}_jswasm.wasm .`))
 				rw.Write([]byte("\n"))
-				rw.Write([]byte("(unix)       GOOS=js GOARCH=wasm go build -o ${{ steps.info.outputs.REPO_NAME }}_jswasm.wasm .\n"))
+				rw.Write([]byte("(unix)       GOOS=js GOARCH=wasm go build -o ${{ steps.info.outputs.PROJECT_NAME }}_jswasm.wasm .\n"))
 				fmt.Println("no wasm", err)
 				return
 			}
