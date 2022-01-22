@@ -55,11 +55,13 @@ func (Bootstrap) ReplaceProjectName(newName string) {
 	fmt.Println("Current git path is", out)
 
 	// validate naming
-	if splitName := strings.Split(newName, "/"); len(splitName) != 2 {
+	splitName := strings.Split(newName, "/"); 
+	if len(splitName) != 2 {
 		fmt.Print("You provided \"", newName, "\" as your new name which is not of the form <username>/<project>.",
 			"If this was intentional edit out this check otherwise fix your input")
 		return
 	}
+	projectName := splitName[1]
 	fmt.Println("Attempting to set the project name to", newName, " ok? y/n")
 	fmt.Print("-> ")
 	reader := bufio.NewReader(os.Stdin)
@@ -87,9 +89,7 @@ func (Bootstrap) ReplaceProjectName(newName string) {
 			}
 
 			newBody := strings.ReplaceAll(string(body), "oakmound/game-template", newName)
-
-			// also just the reponame
-			newBody = strings.ReplaceAll(string(body), "${{ steps.info.outputs.REPO_NAME }}", newName)
+			newBody := strings.ReplaceAll(newBody, "sample-project", projectName)
 
 			// lazy way to not touch files that we dont need to
 			// slow but its just a bootstrap and at least paranoia means that we wont affect asset files and the like

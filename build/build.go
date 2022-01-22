@@ -85,7 +85,7 @@ var (
 
 func init() {
 	flag.BoolVar(&verbose, "v", true, "print build commands as they are run")
-	flag.StringVar(&outputName, "o", "${{ steps.info.outputs.REPO_NAME }}", "output executable name")
+	flag.StringVar(&outputName, "o", "sample-project", "output executable name")
 	flag.BoolVar(&useosx, "osx", false, "build darwin executables")
 	flag.BoolVar(&uselinux, "nix", false, "build linux exectuables")
 	flag.BoolVar(&usewin, "win", true, "build windows exectuables")
