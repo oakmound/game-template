@@ -1,5 +1,4 @@
-# Build and push to itch eventually
-name: itchy-build-pusher
+name: itchio-pusher
 
 on:
   workflow_dispatch:
