@@ -27,7 +27,7 @@ license that can be found in the GO_LICENSE file.
 		}
 
 		const go = new Go();
-		WebAssembly.instantiateStreaming(fetch("${{ steps.info.outputs.PROJECT_NAME }}_jswasm.wasm"), go.importObject).then((result) => {
+		WebAssembly.instantiateStreaming(fetch("sample-project_jswasm.wasm"), go.importObject).then((result) => {
 			let mod, inst;
 			mod = result.module;
 			inst = result.instance;
