@@ -110,15 +110,15 @@ jobs:
         echo "${{  secrets.BUTLER_API_KEY  }}" >> butler_creds
     
     - name: attempt upload 32
-      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win32 $itchProjectName:win32-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win32 youritchusername/youritchproject:win32-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
     - name: attempt upload 64
-      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win64 $itchProjectName:win64-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win64 youritchusername/youritchproject:win64-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
     - name: attempt upload js
-      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/wasm.zip $itchProjectName:js-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/wasm.zip youritchusername/youritchproject:js-beta --userversion "${{ steps.info.outputs.VERSION }}-${{ github.run_number }}"
 
     - name: stable version upload 32
       if: ${{ steps.info.outputs.STABLE_RELEASE == 'true' }}
-      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win32 $itchProjectName:win32-stable --userversion ${{ steps.info.outputs.VERSION }}
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win32 youritchusername/youritchproject:win32-stable --userversion ${{ steps.info.outputs.VERSION }}
     - name: stable version upload 64
       if: ${{ steps.info.outputs.STABLE_RELEASE == 'true'  }}
-      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win64 $itchProjectName:win64-stable --userversion ${{ steps.info.outputs.VERSION }}
+      run: ./butler -i ./butler_creds push go/src/github.com/${{ github.repository }}/build/win64 youritchusername/youritchproject:win64-stable --userversion ${{ steps.info.outputs.VERSION }}
