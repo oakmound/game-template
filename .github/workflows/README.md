@@ -22,6 +22,9 @@ Derived as much of this project was from the oakmound project that can be found 
   - Hide your actions tab (`https://github.com/<username>/<repository_name>/settings/actions`)
   - Require Approval for outside contributors in Actions (`https://github.com/<username>/<repository_name>/settings/actions`)
 - If you have not previously uploaded your itch credentials to your repo or org as the secret BUTLER_API_KEY do the following
-  - [Generate an API key](https://itch.io/user/settings/api-keys) and copy its value from that same page.
+  - [Generate an API key](https://itch.io/user/settings/api-key) and [retreive its value](https://itch.io/docs/butler/login.html)
   - Go to `https://github.com/<username>/<repository_name>/settings/secrets/actions`
-  - Add a new repository secret with the name BUTLER_API_KEY with the value you got from the api key page.
+  - Add a new repository secret with the name BUTLER_API_KEY with the value you got from the api key page
+- For the in browser component, remember to link the uploaded build from github actions to be embedded within itch.
+  - Keep in mind too that the embedded canvas will need some buffer space, something around 10px w and h.
+  
