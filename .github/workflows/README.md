@@ -16,7 +16,7 @@ Derived as much of this project was from the oakmound project that can be found 
 
 - Get an Itch Account
 - Create an [itch project](https://itch.io/game/new) This will get you a project url of the form `https://<username>.itch.io/<gamename>`
-- Update the itchupload.yaml and replace $itchProjectName with `<username>/<gamename>`
+- Update the itchupload.yaml and replace youritchusername/youritchproject with `<username>/<gamename>`
 - If not a private github repo consider locking it down in one of the following ways to protect your secret. While it is masked by default a contributor could push a different version of the action if they wanted
   - Lock down who can push directly to your main branch (security against exfiltration)
   - Hide your actions tab (`https://github.com/<username>/<repository_name>/settings/actions`)
