@@ -55,7 +55,7 @@ func (Bootstrap) ReplaceProjectName(newName string) {
 	fmt.Println("Current git path is", out)
 
 	// validate naming
-	splitName := strings.Split(newName, "/"); 
+	splitName := strings.Split(newName, "/")
 	if len(splitName) != 2 {
 		fmt.Print("You provided \"", newName, "\" as your new name which is not of the form <username>/<project>.",
 			"If this was intentional edit out this check otherwise fix your input")
@@ -89,7 +89,7 @@ func (Bootstrap) ReplaceProjectName(newName string) {
 			}
 
 			newBody := strings.ReplaceAll(string(body), "oakmound/game-template", newName)
-			newBody := strings.ReplaceAll(newBody, "sample-project", projectName)
+			newBody = strings.ReplaceAll(newBody, "sample-project", projectName)
 
 			// lazy way to not touch files that we dont need to
 			// slow but its just a bootstrap and at least paranoia means that we wont affect asset files and the like
