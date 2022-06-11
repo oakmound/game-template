@@ -89,14 +89,14 @@ var Scene = scene.Scene{
 		// Post timing info to the loggin queue
 		dbgStart := time.Now()
 		go func() {
-			d := 1.0 * time.Second
+			d := 5.0 * time.Second
 			t := time.NewTimer(d)
 			defer t.Stop()
 			for {
 				select {
 				case <-t.C:
 					event.TriggerForCallerOn(ctx, logQ.CID(), textqueue.TextQueuePublish,
-						fmt.Sprintf("<--- %.0f seconds after starts", time.Now().Sub(dbgStart).Seconds()))
+						fmt.Sprintf("<--- %.0f seconds after start", time.Now().Sub(dbgStart).Seconds()))
 
 					t.Reset(d)
 				case <-ctx.Done():
