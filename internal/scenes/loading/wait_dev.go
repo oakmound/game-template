@@ -4,7 +4,9 @@
 package loading
 
 import (
-	"github.com/oakmound/oak/v3/scene"
+	"time"
+
+	"github.com/oakmound/oak/v4/scene"
 )
 
-func waitInProduction(ctx *scene.Context) {}
+func waitInProduction(ctx *scene.Context, start time.Time) {}

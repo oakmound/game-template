@@ -3,25 +3,28 @@ package debug
 import (
 	"fmt"
 	"image"
+	"io"
 	"os"
 	"time"
 
+	"github.com/oakmound/game-template/internal/layers"
 	"github.com/oakmound/grove/components/fonthelper"
 	"github.com/oakmound/grove/components/textqueue"
 
-	"github.com/oakmound/game-template/internal/layers"
-	"github.com/oakmound/oak/v3"
-	"github.com/oakmound/oak/v3/alg/floatgeom"
-	"github.com/oakmound/oak/v3/entities/x/btn"
-	"github.com/oakmound/oak/v3/event"
-	"github.com/oakmound/oak/v3/key"
-	"github.com/oakmound/oak/v3/render"
-	"github.com/oakmound/oak/v3/render/mod"
-	"github.com/oakmound/oak/v3/scene"
+	"github.com/oakmound/oak/v4"
+	"github.com/oakmound/oak/v4/alg/floatgeom"
+	"github.com/oakmound/oak/v4/event"
+	"github.com/oakmound/oak/v4/key"
+	"github.com/oakmound/oak/v4/render"
+	"github.com/oakmound/oak/v4/render/mod"
+	"github.com/oakmound/oak/v4/scene"
 	"golang.org/x/image/colornames"
 )
 
 var mainIsRunning bool
+
+// ExtraBus to watch (main bus in this case)
+const ExtraBus = "mainBus"
 
 var Scene = scene.Scene{
 	Start: func(ctx *scene.Context) {
@@ -41,7 +44,7 @@ var Scene = scene.Scene{
 		ctx.DrawStack.Draw(kTitle, 0)
 
 		// vertical line to seperate the 2 sections.
-		bound2 := render.NewLine(tqX-10, 5, tqX-10, float64(ctx.Window.Height()), colornames.Beige)
+		bound2 := render.NewLine(tqX-10, 5, tqX-10, float64(ctx.Window.Bounds().Y()), colornames.Beige)
 		ctx.DrawStack.Draw(bound2, 0)
 
 		logTitle := titleFnt.NewText("Logging", tqX, 10)
@@ -52,28 +55,38 @@ var Scene = scene.Scene{
 
 		bkg := render.NewColorBox(50, 50, colornames.Lightslategray)
 		ctx.Window.(*oak.Window).SetBackground(
-			bkg.Modify(mod.Resize(ctx.Window.Width(), ctx.Window.Height(), mod.CubicResampling)),
+			bkg.Modify(mod.Resize(ctx.Window.Bounds().X(), ctx.Window.Bounds().Y(), mod.CubicResampling)),
 		)
-
-		tq := textqueue.New(
-			ctx, "",
-			floatgeom.Point2{tqX, 50}, layers.Hover,
-			fnt.Copy(),
-			15*time.Second,
-		)
-		ctx.DrawStack.Draw(tq, 0)
 
 		keyQFnt, _ := fnt.RegenerateWith(fonthelper.WithColor(image.NewUniform(colornames.Aliceblue)))
 
-		// This will be hooked into our local down but then we will
 		keyQueue := textqueue.New(
-			ctx, "KeyChange",
+			ctx, []event.UnsafeEventID{},
 			floatgeom.Point2{keyX, 50}, layers.Hover,
 			keyQFnt,
 			4*time.Second,
 		)
+
+		// Extra the reference to the main event loop so we can listen on it
+		extraBusI := ctx.Value(ExtraBus)
+		extraBus, _ := extraBusI.(event.Handler)
+		// bind to global id of 0 as our queue is not in the main event loop so this is a nice and easy redirecter.
+		extraBus.PersistentBind(key.AnyDown.UnsafeEventID, 0,
+			func(cidInOtherMap event.CallerID, handler event.Handler, payload interface{}) event.Response {
+				press, _ := payload.(key.Event)
+				return textqueue.PrintBind(keyQueue, key.AllKeys[press.Code])
+			})
 		ctx.DrawStack.Draw(keyQueue, 0)
 
+		// Create a queue to detail the state of the game.
+		logQ := textqueue.New(
+			ctx, []event.UnsafeEventID{},
+			floatgeom.Point2{tqX, 50}, layers.Hover,
+			fnt.Copy(),
+			15*time.Second,
+		)
+		ctx.DrawStack.Draw(logQ, 0)
+		// Post timing info to the loggin queue
 		dbgStart := time.Now()
 		go func() {
 			d := 5.0 * time.Second
@@ -82,7 +95,9 @@ var Scene = scene.Scene{
 			for {
 				select {
 				case <-t.C:
-					ctx.EventHandler.Trigger("DisplayText", fmt.Sprintf("<--- %.0f seconds after starts", time.Now().Sub(dbgStart).Seconds()))
+					event.TriggerForCallerOn(ctx, logQ.CID(), textqueue.TextQueuePublish,
+						fmt.Sprintf("<--- %.0f seconds after start", time.Now().Sub(dbgStart).Seconds()))
+
 					t.Reset(d)
 				case <-ctx.Done():
 					mainIsRunning = false
@@ -91,32 +106,20 @@ var Scene = scene.Scene{
 			}
 		}()
 
-		// start the lossy event watcher
-		startWatchdog(ctx)
+		out := os.Stdout
+		mw := io.MultiWriter(out, newWriter(ctx, logQ.CallerID))
+		r, w, _ := os.Pipe()
+		os.Stdout = w
+		os.Stderr = w
 
-		// Recreate main event handlers here.
-		ctx.EventHandler.GlobalBind(RecreationNeeded, func(id event.CID, payload interface{}) int {
-
-			event.GlobalBind(key.Down, func(_ event.CID, k interface{}) int {
-				kValue := k.(key.Event)
-				ctx.EventHandler.Trigger("KeyChange", fmt.Sprintf("Press: %v", keyCodeString(kValue.Code)))
-				return 0
-			})
-			event.GlobalBind(key.Up, func(_ event.CID, k interface{}) int {
-				kValue := k.(key.Event)
-				ctx.EventHandler.Trigger("KeyChange", fmt.Sprintf("Release: %v", keyCodeString(kValue.Code)))
-				return 0
-			})
-
-			return 0
-		})
+		go func() {
+			// copy all reads from pipe to multiwriter, which writes to stdout and file
+			_, _ = io.Copy(mw, r)
+		}()
 
 		return
-
-	}, Loop: func() (cont bool) {
-		// Keep running if main loop is running
-		return mainIsRunning
-	}, End: func() (nextScene string, result *scene.Result) {
+	},
+	End: func() (nextScene string, result *scene.Result) {
 		// There is never anything after this scene so just exit
 		os.Exit(1)
 		return "", nil
@@ -128,19 +131,18 @@ func keyCodeString(c key.Code) string {
 	return s[4:]
 }
 
-type displayWriter struct {
-	ctx *scene.Context
+type bufferedEventWriter struct {
+	ctx       *scene.Context
+	theCaller event.CallerID
 }
 
-func (dw *displayWriter) Write(data []byte) (n int, err error) {
-	dw.ctx.EventHandler.Trigger("DisplayText", string(data))
-	os.Stdout.Write(data)
-	return 1, nil
+func newWriter(ctx *scene.Context, caller event.CallerID) bufferedEventWriter {
+	return bufferedEventWriter{ctx, caller}
 }
 
-func standardGoToBind(ctx *scene.Context, cmdKey, sceneName string) btn.Option {
-	return btn.And(
-		btn.Click(event.Empty(func() { go ctx.Window.GoToScene(sceneName) })),
-		btn.Binding(key.Down+cmdKey, event.Empty(func() { go ctx.Window.GoToScene(sceneName) })),
+func (bew bufferedEventWriter) Write(p []byte) (int, error) {
+	event.TriggerForCallerOn(bew.ctx, bew.theCaller, textqueue.TextQueuePublish,
+		string(p),
 	)
+	return len(p), nil
 }

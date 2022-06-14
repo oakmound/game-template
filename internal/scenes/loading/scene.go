@@ -2,20 +2,23 @@ package loading
 
 import (
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/disintegration/gift"
 	"github.com/oakmound/game-template/internal/layers"
 	"github.com/oakmound/game-template/internal/scenes"
-	"github.com/oakmound/grove/components/sound"
-	"github.com/oakmound/oak/v3"
-	"github.com/oakmound/oak/v3/alg/intgeom"
-	"github.com/oakmound/oak/v3/audio"
-	"github.com/oakmound/oak/v3/dlog"
-	"github.com/oakmound/oak/v3/render"
-	"github.com/oakmound/oak/v3/render/mod"
-	"github.com/oakmound/oak/v3/scene"
+	"github.com/oakmound/oak/v4"
+	"github.com/oakmound/oak/v4/alg/intgeom"
+	"github.com/oakmound/oak/v4/audio"
+	"github.com/oakmound/oak/v4/dlog"
+	"github.com/oakmound/oak/v4/render"
+	"github.com/oakmound/oak/v4/render/mod"
+	"github.com/oakmound/oak/v4/scene"
 )
+
+//PreLoadTimeStr
+const PreLoadTimeStr = "preloadtime"
 
 var (
 	loadComplete = 0
@@ -29,6 +32,7 @@ var FastLoad bool
 // Scene for managing loading and displaying something while we load.
 var Scene = scene.Scene{
 	Start: func(ctx *scene.Context) {
+
 		win := ctx.Window.(*oak.Window)
 		// CONSIDER: Provide an ident to show an image that represents you as a creator
 		ident, err := render.LoadSprite(filepath.Join("assets", "images", "raw", "ident.png"))
@@ -36,8 +40,8 @@ var Scene = scene.Scene{
 			ident.Modify(mod.ResizeToFit(400, 400, gift.CubicResampling))
 			identw, identh := ident.GetDims()
 			ident.SetPos(
-				float64(ctx.Window.Width())/2-float64(identw)/2,
-				float64(ctx.Window.Height())/2-float64(identh)/2,
+				float64(ctx.Window.Bounds().X())/2-float64(identw)/2,
+				float64(ctx.Window.Bounds().Y())/2-float64(identh)/2,
 			)
 			ctx.DrawStack.Draw(ident, layers.StackBackground, layers.Back)
 		}
@@ -45,7 +49,7 @@ var Scene = scene.Scene{
 		loadSheet, err := render.LoadSheet(filepath.Join("assets", "images", "32x32", "loading.png"), intgeom.Point2{32, 32})
 		if err == nil {
 			loadingSeq, err = render.NewSheetSequence(loadSheet, 32, 0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0)
-			loadingSeq.SetPos(float64(ctx.Window.Width()/2)-16, float64(ctx.Window.Height())-64)
+			loadingSeq.SetPos(float64(ctx.Window.Bounds().X()/2)-16, float64(ctx.Window.Bounds().Y())-64)
 			dlog.ErrorCheck(err)
 
 			win.LoadingR = loadingSeq
@@ -57,6 +61,9 @@ var Scene = scene.Scene{
 			})
 		}
 
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+
 		// Preload everything in the images folder
 		go func() {
 			imageFolder := "assets/images"
@@ -65,7 +72,7 @@ var Scene = scene.Scene{
 			} else {
 				dlog.ErrorCheck(render.BatchLoad(imageFolder))
 			}
-			loadComplete++
+			wg.Done()
 		}()
 
 		// Load everything in the sound folder
@@ -76,19 +83,22 @@ var Scene = scene.Scene{
 			} else {
 				audio.BatchLoad(filepath.Join("assets", "audio"))
 			}
-
-			// CONSIDER: having an sfx package with the list of files to load with give sound fonts.
-
-			sound.Init(1, 1, 1)
-			loadComplete++
+			wg.Done()
 		}()
+
 		go func() {
-			waitInProduction(ctx)
-			loadComplete++
+			if t := ctx.Value(PreLoadTimeStr); t != nil {
+				if preTime, ok := t.(time.Time); ok {
+					// Fake a longer wait time by ensuring that in production we show the loading information
+					// such as a loading splash.
+
+					waitInProduction(ctx, preTime)
+				}
+			}
+			wg.Wait()
+			ctx.Window.NextScene()
 		}()
-	},
-	Loop: func() bool {
-		return loadComplete < 3
+
 	},
 	End: func() (string, *scene.Result) {
 		return scenes.Sample, &scene.Result{
