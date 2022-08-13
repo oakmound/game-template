@@ -4,22 +4,24 @@
 package loading
 
 import (
+	"time"
+
 	"github.com/oakmound/oak/v4/event"
 	"github.com/oakmound/oak/v4/key"
 	"github.com/oakmound/oak/v4/scene"
-	"time"
 )
 
-func waitInProduction(ctx *scene.Context, start time.Time) {
-	//press esc or wait 2 seconds
-	delayTime := time.Until(start.Add(10 * time.Second))
-	cancelCh := make(chan struct{})
-	event.GlobalBind(ctx, key.Down(key.Escape), func(ev key.Event) event.Response {
-		cancelCh <- struct{}{}
+func waitInProduction(ctx *scene.Context) {
+
+	escChan := make(chan struct{})
+	event.GlobalBind(ctx, key.Down(key.Escape), func(key.Event) event.Response {
+		escChan <- struct{}{}
 		return 1
 	})
+
+	//press esc or wait 2 seconds
 	select {
-	case <-time.After(delayTime):
-	case <-cancelCh:
+	case <-time.After(2 * time.Second):
+	case <-escChan:
 	}
 }
