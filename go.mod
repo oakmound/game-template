@@ -1,6 +1,6 @@
 module github.com/oakmound/game-template
 
-go 1.20
+go 1.23
 
 require (
 	github.com/disintegration/gift v1.2.1

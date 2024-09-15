@@ -31,3 +31,8 @@ For example, `mage bootstrap:replaceProjectName oakmound/game-template`
 2) Check out the places with "CONSIDER:" and see if you want to perform the follow up steps. These locations are generally a bit out of the way (ie not in the sample scene).
 3) Setup a project in Itch and connect your github actions pipeline to push builds to it. Follow the steps in .github\workflows\README.md to get your itchupload pipe running!
 4) Remove or adjust the license to your project's needs.
+
+## Troubleshooting
+
+Q: My JS build won't start
+A: If you updated Go recently you may need to update wasm_exec.js to match this, provided by the Go team: [wasm_exec.js](https://github.com/golang/go/blob/go1.23.0/misc/wasm/wasm_exec.js)
