@@ -8,7 +8,7 @@ require (
 	github.com/oakmound/grove/components/fonthelper v0.0.0-20220611165239-03a601b3571b
 	github.com/oakmound/grove/components/textqueue v0.0.0-20220611165239-03a601b3571b
 	github.com/oakmound/oak/v4 v4.1.0
-	golang.org/x/image v0.9.0
+	golang.org/x/image v0.18.0
 	golang.org/x/sync v0.3.0
 )
 
