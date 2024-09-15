@@ -1,2 +1,3 @@
 _output/*
 build/*.exe
+build/*.wasm
